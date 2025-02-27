@@ -1,0 +1,16 @@
+{
+    "name": "CodeGenerator",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6a5f5a26c3c0dde49bebc81379176113"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
