@@ -55,6 +55,15 @@ public abstract class Ability
         }
     }
 
+    private bool disposed = false;
+    public bool Disposed
+    {
+        get
+        {
+            return disposed;
+        }
+    }
+
     public Ability()
     {
     }
@@ -84,8 +93,25 @@ public abstract class Ability
         Dispose();
     }
 
-    protected virtual void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
+        if (!disposed)
+        {
+            if (disposing)
+            {
+                // Dispose managed memory...
+            }
+
+            // Dispose unmanaged memory...
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(true);
     }
 
     internal void ActivateInternal()

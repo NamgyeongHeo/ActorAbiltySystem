@@ -3,12 +3,29 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public struct TimerHandle
 {
     private static int maxIndex;
     private int index;
+
+    internal static TimerHandle None
+    {
+        get
+        {
+            return new TimerHandle() { index = -1 };
+        }
+    }
+
+    public bool IsValid
+    {
+        get
+        {
+            return index >= 0;
+        }
+    }
 
     internal static TimerHandle Generate()
     {
@@ -26,37 +43,45 @@ internal class TimerManager : IDisposable
         private float startTime;
         private float delay;
 
-        private CancellationTokenSource cts;
+        private bool isRunning;
+        public bool IsRunning
+        {
+            get
+            {
+                return isRunning;
+            }
+        }
 
         public Timer(TimerManager manager, Action action, float delay)
         {
-            cts = new CancellationTokenSource();
             this.manager = manager;
             this.action = action;
             this.delay = delay;
         }
 
-        public async UniTask Start()
+        public void Start()
         {
-            startTime = Time.time;
-            while((Time.time - startTime) < delay)
+            startTime = manager.Time;
+            isRunning = true;
+        }
+
+        public void Update(float time, float deltaTime)
+        {
+            if (!isRunning)
             {
-                bool isCanceled = await UniTask.Yield(cts.Token).SuppressCancellationThrow();
-                if (isCanceled)
-                {
-                    return;
-                }
+                return;
             }
 
-            action?.Invoke();
-
-            manager.Remove(this);
+            if ((time - startTime) >= delay)
+            {
+                action?.Invoke();
+                manager.Remove(this);
+            }
         }
 
         public void Stop(bool invokeAction)
         {
-            cts.Cancel();
-
+            isRunning = false;
             if (invokeAction)
             {
                 action?.Invoke();
@@ -65,12 +90,12 @@ internal class TimerManager : IDisposable
 
         public void Reset()
         {
-            startTime = Time.time;
+            startTime = manager.Time;
         }
 
         public void SetRemainTime(float remainTime)
         {
-            delay = remainTime + Time.time - startTime;
+            delay = remainTime + manager.Time - startTime;
         }
 
         public void SetDelay(float delay)
@@ -80,11 +105,39 @@ internal class TimerManager : IDisposable
 
         public float GetRemainTime()
         {
-            return delay - (Time.time - startTime);
+            return delay - (manager.Time - startTime);
         }
     }
 
     private Dictionary<TimerHandle, Timer> timers = new Dictionary<TimerHandle, Timer>();
+
+    private ITimerHandler timerHandler;
+    public float Time
+    {
+        get
+        {
+            return timerHandler.Time;
+        }
+    }
+
+    internal TimerManager(ITimerHandler timerHandler = null)
+    {
+        this.timerHandler = timerHandler;
+        if (timerHandler == null)
+        {
+            this.timerHandler = DefaultTimerHandler.FindOrCreate();
+        }
+
+        this.timerHandler.onUpdate += UpdateTimers;
+    }
+
+    private void UpdateTimers(float deltaTime)
+    {
+        foreach (KeyValuePair<TimerHandle, Timer> pair in timers)
+        {
+            pair.Value.Update(timerHandler.Time, deltaTime);
+        }
+    }
 
     public TimerHandle Start(Action action, float delay)
     {
@@ -92,7 +145,7 @@ internal class TimerManager : IDisposable
         Timer timer = new Timer(this, action, delay);
         timers.Add(handle, timer);
 
-        timer.Start().Forget();
+        timer.Start();
 
         return handle;
     }

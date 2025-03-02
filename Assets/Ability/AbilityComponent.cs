@@ -8,6 +8,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 using static ActorEffect;
 
 public interface IAbilityOwnable
@@ -96,10 +97,17 @@ public class AbilityComponent
     private Dictionary<GameplayTag, ActorAttribute> attributes;
 
     private Dictionary<AbilityHandle, Ability> abilities;
-    private Dictionary<EffectHandle, ActorEffect> effects;
+    private Dictionary<EffectHandle, TemporaryActorEffect> effects;
     private List<EffectTimerHandle> effectDurationTimers;
 
-    private TimerManager effectTimerManager;
+    private TimerManager timerManager;
+    internal TimerManager TimerManager
+    {
+        get
+        {
+            return timerManager;
+        }
+    }
 
     private GameplayTagContainer tagContainer;
     public GameplayTagContainer TagContainer
@@ -124,16 +132,16 @@ public class AbilityComponent
 
     private CancellationTokenSource removeTokenSource;
 
-    public AbilityComponent(IAbilityOwnable owner, IEnumerable<AttributeInitializationInfo> attributeInitializers)
+    public AbilityComponent(IAbilityOwnable owner, IEnumerable<AttributeInitializationInfo> attributeInitializers, ITimerHandler timerHandler = null)
     {
         removeTokenSource = new CancellationTokenSource();
 
         tagContainer = GameplayTagContainer.Create();
-        effectTimerManager = new TimerManager();
+        timerManager = new TimerManager(timerHandler);
 
         attributes = new Dictionary<GameplayTag, ActorAttribute>();
         abilities = new Dictionary<AbilityHandle, Ability>();
-        effects = new Dictionary<EffectHandle, ActorEffect>();
+        effects = new Dictionary<EffectHandle, TemporaryActorEffect>();
         effectDurationTimers = new List<EffectTimerHandle>();
 
         this.owner = owner;
@@ -204,8 +212,8 @@ public class AbilityComponent
         removeTokenSource.Dispose();
         removeTokenSource = null;
 
-        effectTimerManager?.Dispose();
-        effectTimerManager = null;
+        timerManager?.Dispose();
+        timerManager = null;
     }
 
     public ActorAttribute GetAttribute(GameplayTag tag)
@@ -446,6 +454,12 @@ public class AbilityComponent
 
     private EffectHandle ApplyEffectInternal(ActorEffect effect, AbilityComponent instigator)
     {
+        if (effect.DidApply)
+        {
+            Debug.LogError("ActorEffect can't apply twice.");
+            return EffectHandle.Generate(null);
+        }
+
         effect.SetTarget(instigator, this);
 
         if (!effect.CanApply())
@@ -457,7 +471,7 @@ public class AbilityComponent
 
         lock (effects)
         {
-            foreach (KeyValuePair<EffectHandle, ActorEffect> pair in effects.Where((pair) => effect.IsNeedRemoveOnApply(pair.Value)))
+            foreach (KeyValuePair<EffectHandle, TemporaryActorEffect> pair in effects.Where((pair) => effect.IsNeedRemoveOnApply(pair.Value)))
             {
                 RemoveEffect(pair.Key);
             }
@@ -466,10 +480,11 @@ public class AbilityComponent
 
             GameplayTag[] attributeTags = attributes.Keys.ToArray();
             ReadOnlyCollection<GameplayTag> targetAttributeTags;
-            if (durationPolicy != ELifeTimePolicy.Permanant && effect.AllowStack)
+            TemporaryActorEffect tempEffect = effect as TemporaryActorEffect;
+            if (tempEffect != null)
             {
                 Type effectType = effect.GetType();
-                KeyValuePair<EffectHandle, ActorEffect> pair = effects.FirstOrDefault((KeyValuePair<EffectHandle, ActorEffect> pair) => !pair.Value.IsPendingRemove && pair.Value.GetType().Equals(effectType));
+                KeyValuePair<EffectHandle, TemporaryActorEffect> pair = effects.FirstOrDefault((KeyValuePair<EffectHandle, TemporaryActorEffect> pair) => !pair.Value.IsPendingRemove && pair.Value.GetType().Equals(effectType));
                 if (pair.Key.IsValid())
                 {
                     if (!ProcessEffectStack(pair.Key, pair.Value, effect))
@@ -485,14 +500,14 @@ public class AbilityComponent
             }
 
             EffectHandle handle;
-            if (durationPolicy == ELifeTimePolicy.Permanant)
+            if (tempEffect != null)
             {
-                handle = EffectHandle.Generate(null);
+                handle = EffectHandle.Generate(tempEffect);
+                effects.Add(handle, tempEffect);
             }
             else
             {
-                handle = EffectHandle.Generate(effect);
-                effects.Add(handle, effect);
+                handle = EffectHandle.Generate(null);
             }
 
             effect.InitInternal();
@@ -566,8 +581,8 @@ public class AbilityComponent
 
                 TimerHandle timerHandle = effectDurationTimers[timerIndex].timerHandle;
                 float duration = existEffect.Duration;
-                float newEffectDuration = stackDurationPolicy == EStackDurationPolicy.Refresh ? duration : effectTimerManager.GetRemainTime(timerHandle) + duration;
-                effectTimerManager.SetRemainTime(timerHandle, newEffectDuration);
+                float newEffectDuration = stackDurationPolicy == EStackDurationPolicy.Refresh ? duration : timerManager.GetRemainTime(timerHandle) + duration;
+                timerManager.SetRemainTime(timerHandle, newEffectDuration);
             }
         }
 
@@ -579,13 +594,13 @@ public class AbilityComponent
         effectDurationTimers.Add(new EffectTimerHandle()
         {
             effectHandle = handle,
-            timerHandle = effectTimerManager.Start(() => ProcessEffectExpiration(handle), MathF.Max(effect.Duration, 0.1f))
+            timerHandle = timerManager.Start(() => ProcessEffectExpiration(handle), MathF.Max(effect.Duration, 0.1f))
         });
     }
 
     private void ProcessEffectExpiration(EffectHandle handle)
     {
-        if (!effects.TryGetValue(handle, out ActorEffect effect))
+        if (!effects.TryGetValue(handle, out TemporaryActorEffect effect))
         {
             return;
         }
@@ -649,7 +664,7 @@ public class AbilityComponent
     {
         if (Monitor.IsEntered(effects))
         {
-            if (!effects.TryGetValue(handle, out ActorEffect effect))
+            if (!effects.TryGetValue(handle, out TemporaryActorEffect effect))
             {
                 return;
             }
@@ -662,7 +677,7 @@ public class AbilityComponent
         }
         else
         {
-            if (!effects.Remove(handle, out ActorEffect effect))
+            if (!effects.Remove(handle, out TemporaryActorEffect effect))
             {
                 return;
             }
@@ -701,8 +716,8 @@ public class AbilityComponent
             return;
         }
 
-        KeyValuePair<EffectHandle, ActorEffect>[] pairs = effects.Where((pair) => type == pair.Value.GetType()).ToArray();
-        foreach (KeyValuePair<EffectHandle, ActorEffect> pair in pairs)
+        KeyValuePair<EffectHandle, TemporaryActorEffect>[] pairs = effects.Where((pair) => type == pair.Value.GetType()).ToArray();
+        foreach (KeyValuePair<EffectHandle, TemporaryActorEffect> pair in pairs)
         {
             RemoveEffect(pair.Key);
         }

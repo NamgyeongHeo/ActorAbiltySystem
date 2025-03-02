@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 
-public abstract partial class ActorEffect
+public abstract partial class ActorEffect : IDisposable
 {
     internal event Action onUpdate;
     public event Action<int> onStackCountChange;
@@ -28,19 +28,6 @@ public abstract partial class ActorEffect
     {
         Clear, // Clear all stack on expiration.
         Refresh // Recalculate stack and refresh duration.
-    }
-
-    private int stack = 1;
-    public int Stack
-    {
-        get
-        {
-            return stack;
-        }
-        internal set
-        {
-            stack = value;
-        }
     }
 
     private readonly int priority = 0;
@@ -67,6 +54,14 @@ public abstract partial class ActorEffect
         get
         {
             return target;
+        }
+    }
+
+    public bool DidApply
+    {
+        get
+        {
+            return instigator != null && target != null;
         }
     }
 
@@ -156,6 +151,15 @@ public abstract partial class ActorEffect
 
     private List<AbilityHandle> grantAbilityHandles;
 
+    protected bool disposed;
+    public bool Disposed
+    {
+        get
+        {
+            return disposed;
+        }
+    }
+
     public ActorEffect()
     {
         grantAbilityHandles = new List<AbilityHandle>();
@@ -239,15 +243,15 @@ public abstract partial class ActorEffect
         this.grantAbilityTypes = grantAbilityTypes.Distinct().ToArray();
     }
 
+    ~ActorEffect()
+    {
+        Dispose(false);
+    }
+
     internal void SetTarget(AbilityComponent instigator, AbilityComponent target)
     {
         this.instigator = instigator;
         this.target = target;
-    }
-
-    internal virtual void StackEffect(ActorEffect newEffect)
-    {
-        stack++;
     }
 
     protected internal virtual bool CanApply()
@@ -313,8 +317,23 @@ public abstract partial class ActorEffect
         Dispose();
     }
 
-    protected virtual void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
+        if (!disposed)
+        {
+            if (disposing)
+            {
+
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 
     protected void SetDirty()
