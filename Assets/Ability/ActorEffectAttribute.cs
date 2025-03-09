@@ -60,24 +60,6 @@ public partial class ActorEffect
         }
     }
 
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
-    public class PriorityAttribute : Attribute
-    {
-        private int priority;
-        public int Priority
-        {
-            get
-            {
-                return priority;
-            }
-        }
-
-        public PriorityAttribute(int priority)
-        {
-            this.priority = priority;
-        }
-    }
-
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public class GameplayTagsAttribute : Attribute
     {

@@ -1,15 +1,11 @@
-﻿using Codice.Client.Common.Connection;
-using Cysharp.Threading.Tasks;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using static ActorEffect;
 
 public interface IAbilityOwnable
 {
@@ -391,72 +387,11 @@ public class AbilityComponent
         }
     }
 
-    public EffectHandle ApplyEffect(Type effectType, AbilityComponent instigator)
-    {
-        if (effectType == null || instigator == null || !typeof(ActorEffect).IsAssignableFrom(effectType))
-        {
-            return EffectHandle.Generate(null);
-        }
-
-        ConstructorInfo constructor = effectType.GetConstructor(Array.Empty<Type>());
-        if (constructor == null)
-        {
-            return EffectHandle.Generate(null);
-        }
-
-        ActorEffect effect = (ActorEffect)constructor.Invoke(null);
-        effect.Construct();
-        return ApplyEffectInternal(effect, instigator);
-    }
-
-    public EffectHandle ApplyEffect<DATA_TYPE>(Type effectType, AbilityComponent instigator, DATA_TYPE data)
-    {
-        if (effectType == null || instigator == null || !typeof(ActorEffect<DATA_TYPE>).IsAssignableFrom(effectType))
-        {
-            return EffectHandle.Generate(null);
-        }
-
-        ConstructorInfo constructor = effectType.GetConstructor(Array.Empty<Type>());
-        if (constructor == null)
-        {
-            return EffectHandle.Generate(null);
-        }
-
-        ActorEffect<DATA_TYPE> effect = (ActorEffect<DATA_TYPE>)constructor.Invoke(null);
-        effect.ConstructWithData(data);
-        return ApplyEffectInternal(effect, instigator);
-    }
-
-    public EffectHandle ApplyEffect<T>(AbilityComponent instigator) where T : ActorEffect, new()
-    {
-        if (instigator == null)
-        {
-            return EffectHandle.Generate(null);
-        }
-
-        ActorEffect effect = new T();
-        effect.Construct();
-        return ApplyEffectInternal(effect, instigator);
-    }
-
-    public EffectHandle ApplyEffect<T, DATA_TYPE>(AbilityComponent instigator, DATA_TYPE data)
-        where T : ActorEffect<DATA_TYPE>, new()
-    {
-        if (instigator == null)
-        {
-            return EffectHandle.Generate(null);
-        }
-
-        ActorEffect<DATA_TYPE> effect = new T();
-        effect.ConstructWithData(data);
-        return ApplyEffectInternal(effect, instigator);
-    }
-
-    private EffectHandle ApplyEffectInternal(ActorEffect effect, AbilityComponent instigator)
+    public EffectHandle ApplyEffect(ActorEffect effect, AbilityComponent instigator)
     {
         if (effect.DidApply)
         {
-            Debug.LogError("ActorEffect can't apply twice.");
+            Debug.LogError("ActorEffect can't apply more than once.");
             return EffectHandle.Generate(null);
         }
 
@@ -476,8 +411,6 @@ public class AbilityComponent
                 RemoveEffect(pair.Key);
             }
 
-            ELifeTimePolicy durationPolicy = effect.DurationPolicy;
-
             GameplayTag[] attributeTags = attributes.Keys.ToArray();
             ReadOnlyCollection<GameplayTag> targetAttributeTags;
             TemporaryActorEffect tempEffect = effect as TemporaryActorEffect;
@@ -487,11 +420,7 @@ public class AbilityComponent
                 KeyValuePair<EffectHandle, TemporaryActorEffect> pair = effects.FirstOrDefault((KeyValuePair<EffectHandle, TemporaryActorEffect> pair) => !pair.Value.IsPendingRemove && pair.Value.GetType().Equals(effectType));
                 if (pair.Key.IsValid())
                 {
-                    if (!ProcessEffectStack(pair.Key, pair.Value, effect))
-                    {
-                        return EffectHandle.Generate(null);
-                    }
-
+                    pair.Value.ProcessStack(tempEffect);
                     IEnumerable<ActorAttribute> updated = RecalculateTargetAttributes(effect);
                     PostApplyEffectInternal(updated, effect);
 
@@ -521,7 +450,7 @@ public class AbilityComponent
                     continue;
                 }
 
-                if (durationPolicy == ELifeTimePolicy.Permanant)
+                if (tempEffect == null)
                 {
                     float oldBaseValue = attribute.BaseValue;
                     float newBaseValue = effect.Modify(attribute.BaseValue, attribute.CurrentValue);
@@ -530,7 +459,7 @@ public class AbilityComponent
                 }
                 else
                 {
-                    attribute.AddEffect(effect);
+                    attribute.AddEffect(tempEffect);
                 }
 
                 if (!targetAttributes.Contains(attribute))
@@ -539,106 +468,9 @@ public class AbilityComponent
                 }
             }
 
-            if (durationPolicy == ELifeTimePolicy.Temporary)
-            {
-                AddExpirationTimer(handle, effect);
-            }
-
             PostApplyEffectInternal(targetAttributes, effect);
 
             return handle;
-        }
-    }
-
-    private bool ProcessEffectStack(EffectHandle existHandle, ActorEffect existEffect, ActorEffect newEffect)
-    {
-        ELifeTimePolicy durationPolicy = newEffect.DurationPolicy;
-        EStackDurationPolicy stackDurationPolicy = existEffect.StackDurationPolicy;
-        EStackExpirationPolicy stackExpirationPolicy = existEffect.StackExpirationPolicy;
-
-        existEffect.StackEffect(newEffect);
-
-        if (stackDurationPolicy == EStackDurationPolicy.None)
-        {
-            return true;
-        }
-
-        
-
-        if (durationPolicy == ELifeTimePolicy.Temporary)
-        {
-            if (stackDurationPolicy == EStackDurationPolicy.Individual)
-            {
-                AddExpirationTimer(existHandle, existEffect);
-            }
-            else
-            {
-                int timerIndex = effectDurationTimers.FindIndex((item) => item.effectHandle.Equals(existHandle));
-                if (timerIndex < 0)
-                {
-                    return false;
-                }
-
-                TimerHandle timerHandle = effectDurationTimers[timerIndex].timerHandle;
-                float duration = existEffect.Duration;
-                float newEffectDuration = stackDurationPolicy == EStackDurationPolicy.Refresh ? duration : timerManager.GetRemainTime(timerHandle) + duration;
-                timerManager.SetRemainTime(timerHandle, newEffectDuration);
-            }
-        }
-
-        return true;
-    }
-
-    private void AddExpirationTimer(EffectHandle handle, ActorEffect effect)
-    {
-        effectDurationTimers.Add(new EffectTimerHandle()
-        {
-            effectHandle = handle,
-            timerHandle = timerManager.Start(() => ProcessEffectExpiration(handle), MathF.Max(effect.Duration, 0.1f))
-        });
-    }
-
-    private void ProcessEffectExpiration(EffectHandle handle)
-    {
-        if (!effects.TryGetValue(handle, out TemporaryActorEffect effect))
-        {
-            return;
-        }
-
-        if (!effect.AllowStack)
-        {
-            RemoveEffect(handle);
-        }
-        else
-        {
-            switch (effect.StackExpirationPolicy)
-            {
-                case EStackExpirationPolicy.Clear:
-                    RemoveEffect(handle);
-                    break;
-
-                case EStackExpirationPolicy.Refresh:
-                    effect.Stack = effect.UpdateStackCount();
-                    if (effect.Stack <= 0)
-                    {
-                        RemoveEffect(handle);
-                        break;
-                    }
-
-                    int index = effectDurationTimers.FindIndex((effectTimerHandle) => effectTimerHandle.effectHandle.IsValid() && effectTimerHandle.effectHandle.Equals(handle));
-                    if (index < 0)
-                    {
-                        break;
-                    }
-
-                    effectDurationTimers.RemoveAt(index);
-
-                    AddExpirationTimer(handle, effect);
-
-                    RecalculateTargetAttributes(effect);
-
-                    break;
-            }
         }
     }
 

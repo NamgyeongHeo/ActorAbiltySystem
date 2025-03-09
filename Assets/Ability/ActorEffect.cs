@@ -30,14 +30,7 @@ public abstract partial class ActorEffect : IDisposable
         Refresh // Recalculate stack and refresh duration.
     }
 
-    private readonly int priority = 0;
-    public int Priority
-    {
-        get
-        {
-            return priority;
-        }
-    }
+    
 
     private AbilityComponent instigator;
     public AbilityComponent Instigator
@@ -92,50 +85,6 @@ public abstract partial class ActorEffect : IDisposable
         }
     }
 
-    private readonly EStackDurationPolicy stackDurationPolicy;
-    public EStackDurationPolicy StackDurationPolicy
-    {
-        get
-        {
-            return stackDurationPolicy;
-        }
-    }
-
-    private readonly EStackExpirationPolicy stackExpirationPolicy;
-    public EStackExpirationPolicy StackExpirationPolicy
-    {
-        get
-        {
-            return stackExpirationPolicy;
-        }
-    }
-
-    private readonly bool allowStack = false;
-    public bool AllowStack
-    {
-        get
-        {
-            return allowStack;
-        }
-    }
-
-    private readonly ELifeTimePolicy durationPolicy;
-    public ELifeTimePolicy DurationPolicy
-    {
-        get
-        {
-            return durationPolicy;
-        }
-    }
-
-    public virtual float Duration
-    {
-        get
-        {
-            return 0f;
-        }
-    }
-
     private bool isPendingRemove = false;
     public bool IsPendingRemove
     {
@@ -165,25 +114,6 @@ public abstract partial class ActorEffect : IDisposable
         grantAbilityHandles = new List<AbilityHandle>();
 
         Type type = GetType();
-        PriorityAttribute priorityAttribute = type.GetCustomAttribute<PriorityAttribute>();
-        if (priorityAttribute != null)
-        {
-            priority = priorityAttribute.Priority;
-        }
-
-        LifeTimePolicyAttribute durationPolicyAttribute = type.GetCustomAttribute<LifeTimePolicyAttribute>();
-        if (durationPolicyAttribute != null)
-        {
-            durationPolicy = durationPolicyAttribute.Policy;
-        }
-
-        StackPolicyAttribute stackPolicyAttribute = type.GetCustomAttribute<StackPolicyAttribute>();
-        if (stackPolicyAttribute != null)
-        {
-            allowStack = true;
-            stackDurationPolicy = stackPolicyAttribute.DurationPolicy;
-            stackExpirationPolicy = stackPolicyAttribute.ExpirationPolicy;
-        }
 
         List<string> tagNames = new List<string>();
         IEnumerable<GameplayTagsAttribute> tagsAttributes = type.GetCustomAttributes<GameplayTagsAttribute>();
@@ -269,37 +199,12 @@ public abstract partial class ActorEffect : IDisposable
         return false;
     }
 
-    internal int UpdateStackCount()
-    {
-        int originStack = stack;
-        int newStack = RecalculateStackCountOnExpiration();
-        if (originStack != newStack) 
-        {
-            onStackCountChange?.Invoke(newStack);
-        }
-
-        return newStack;
-    }
-
-    protected virtual int RecalculateStackCountOnExpiration()
-    {
-        return Stack - 1;
-    }
-
     internal virtual void Construct()
     {
     }
 
     internal virtual void InitInternal()
     {
-        if (durationPolicy != ELifeTimePolicy.Permanant)
-        {
-            foreach (Type grantAbilityType in grantAbilityTypes)
-            {
-                grantAbilityHandles.Add(Target.AddAbility(grantAbilityType));
-            }
-        }
-
         Init();
     }
 
@@ -344,47 +249,5 @@ public abstract partial class ActorEffect : IDisposable
     protected internal virtual float Modify(float baseValue, float currentValue)
     {
         return currentValue;
-    }
-}
-
-public class ActorEffect<T> : ActorEffect
-{
-    private T contextData;
-    protected T ContextData
-    {
-        get
-        {
-            return contextData;
-        }
-    }
-
-    internal void ConstructWithData(T contextData)
-    {
-        this.contextData = contextData;
-    }
-
-    internal override void Construct()
-    {
-        contextData = ConstructDefaultData();
-    }
-
-    internal override void StackEffect(ActorEffect newEffect)
-    {
-        base.StackEffect(newEffect);
-
-        if (newEffect is ActorEffect<T> newEffectWithContext)
-        {
-            contextData = StackContextData(ContextData, newEffectWithContext.ContextData);
-        }
-    }
-
-    protected virtual T ConstructDefaultData()
-    {
-        return default;
-    }
-
-    protected virtual T StackContextData(T existData, T newData)
-    {
-        return newData;
     }
 }

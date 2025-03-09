@@ -1,13 +1,52 @@
+using System;
+using System.Reflection;
 using UnityEngine;
 
 public abstract class TemporaryActorEffect : ActorEffect
 {
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
+    public class PriorityAttribute : Attribute
+    {
+        private int priority;
+        public int Priority
+        {
+            get
+            {
+                return priority;
+            }
+        }
+
+        public PriorityAttribute(int priority)
+        {
+            this.priority = priority;
+        }
+    }
+
+    private readonly int priority = 0;
+    public int Priority
+    {
+        get
+        {
+            return priority;
+        }
+    }
+
     private int stack = 1;
     protected int Stack
     {
         get
         {
             return stack;
+        }
+    }
+
+    public TemporaryActorEffect()
+    {
+        Type type = GetType();
+        PriorityAttribute priorityAttribute = type.GetCustomAttribute<PriorityAttribute>();
+        if (priorityAttribute != null)
+        {
+            priority = priorityAttribute.Priority;
         }
     }
 
@@ -70,8 +109,8 @@ public abstract class TemporaryActorEffect : ActorEffect
     }
 
     // Call when TemporaryActorEffect applied to AbilityComponent already has same type effect.
-    protected internal virtual void OnStack(TemporaryActorEffect newEffect, ref int stack) { stack++; }
+    protected virtual void OnStack(TemporaryActorEffect newEffect, ref int stack) { stack++; }
 
     // Call when expiration timer is end.
-    protected internal virtual void OnExpired(ref int stack) { stack--; }
+    protected virtual void OnExpired(ref int stack) { stack--; }
 }

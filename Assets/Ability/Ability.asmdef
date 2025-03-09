@@ -2,7 +2,6 @@
     "name": "Ability",
     "rootNamespace": "",
     "references": [
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:1b8ea36e5474e44449a34a9150c7b47b",
         "GUID:6a5f5a26c3c0dde49bebc81379176113"
     ],

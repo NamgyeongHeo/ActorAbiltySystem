@@ -75,11 +75,11 @@ public sealed class ActorAttribute
         }
     }
 
-    private List<ActorEffect> effects;
+    private List<TemporaryActorEffect> effects;
 
     private ActorAttribute()
     {
-        effects = new List<ActorEffect>();
+        effects = new List<TemporaryActorEffect>();
     }
 
     public static ActorAttribute Create(GameplayTag tag, float initialValue)
@@ -97,7 +97,7 @@ public sealed class ActorAttribute
         return attr;
     }
 
-    internal void AddEffect(ActorEffect effect)
+    internal void AddEffect(TemporaryActorEffect effect)
     {
         if (effects.Contains(effect))
         {
@@ -109,9 +109,9 @@ public sealed class ActorAttribute
         UpdateValue();
     }
 
-    internal void AddEffects(IEnumerable<ActorEffect> effects)
+    internal void AddEffects(IEnumerable<TemporaryActorEffect> effects)
     {
-        foreach (ActorEffect effect in effects)
+        foreach (TemporaryActorEffect effect in effects)
         {
             if (this.effects.Contains(effect))
             {
@@ -125,7 +125,7 @@ public sealed class ActorAttribute
         UpdateValue();
     }
 
-    internal bool RemoveEffect(ActorEffect effect)
+    internal bool RemoveEffect(TemporaryActorEffect effect)
     {
         bool result = effects.Remove(effect);
         if (result)
@@ -137,10 +137,10 @@ public sealed class ActorAttribute
         return result;
     }
 
-    internal bool RemoveEffects(IEnumerable<ActorEffect> effects)
+    internal bool RemoveEffects(IEnumerable<TemporaryActorEffect> effects)
     {
         bool result = false;
-        foreach (ActorEffect effect in effects)
+        foreach (TemporaryActorEffect effect in effects)
         {
             result |= this.effects.Remove(effect);
             effect.onUpdate -= UpdateValue;
@@ -160,7 +160,7 @@ public sealed class ActorAttribute
         currentValue = baseValue;
 
         effects.Sort((a, b) => b.Priority - a.Priority);
-        foreach (ActorEffect effect in effects)
+        foreach (TemporaryActorEffect effect in effects)
         {
             if (effect.IsPendingRemove)
             {

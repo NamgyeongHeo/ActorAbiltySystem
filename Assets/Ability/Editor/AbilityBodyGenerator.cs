@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 public class AbilityBodyGenerator : ICodeGenerator
@@ -32,11 +33,21 @@ public class AbilityBodyGenerator : ICodeGenerator
     {
         bool needFile = false;
 
+        if (abilityType == null)
+        {
+            return default;
+        }
+
+        string[] guids = AssetDatabase.FindAssets($"{abilityType.Name}", new string[] { "Assets" });
+        string path = guids.Select((guid) => AssetDatabase.GUIDToAssetPath(guid)).FirstOrDefault((path) => !path.EndsWith(ICodeGenerator.FileNameSuffix));
+        path = Path.GetRelativePath("Assets", path);
+        path = Path.ChangeExtension(path, ICodeGenerator.FileNameSuffix);
+
         Type[] interfaceTypes = abilityType.GetInterfaces();
         Array.Reverse(interfaceTypes);
 
         string abilityName = abilityType.Name;
-        string path = $"{GenerationFolderPath}/{abilityName}.generated.cs";
+        
         StringBuilder codeBuilder = new StringBuilder();
         codeBuilder.AppendLine($"public partial class {abilityName} : {nameof(Ability)}");
         codeBuilder.AppendLine("{");
