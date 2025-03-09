@@ -69,7 +69,8 @@ internal static class CodeGenerator
 
     private static bool GenerateScriptFile(CodeGenerationContext context)
     {
-        string path = $"{Application.dataPath}/{context.path}";
+        string path = Path.Combine(Application.dataPath, context.path);
+        path = path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         string dirPath = Path.GetDirectoryName(path);
         if (!Directory.Exists(dirPath))
         {

@@ -40,15 +40,24 @@ public class AbilityBodyGenerator : ICodeGenerator
 
         string[] guids = AssetDatabase.FindAssets($"{abilityType.Name}", new string[] { "Assets" });
         string path = guids.Select((guid) => AssetDatabase.GUIDToAssetPath(guid)).FirstOrDefault((path) => !path.EndsWith(ICodeGenerator.FileNameSuffix));
-        path = Path.GetRelativePath("Assets", path);
+        path = Path.GetRelativePath("Assets/", path);
         path = Path.ChangeExtension(path, ICodeGenerator.FileNameSuffix);
+        path = path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         Type[] interfaceTypes = abilityType.GetInterfaces();
         Array.Reverse(interfaceTypes);
 
         string abilityName = abilityType.Name;
-        
+        string namespaceName = abilityType.Namespace;
+
         StringBuilder codeBuilder = new StringBuilder();
+        /*
+        if (!string.IsNullOrEmpty(namespaceName))
+        {
+            codeBuilder.AppendLine($"namespace {namespaceName}");
+            codeBuilder.AppendLine("{");
+        }
+        */
         codeBuilder.AppendLine($"public partial class {abilityName} : {nameof(Ability)}");
         codeBuilder.AppendLine("{");
         codeBuilder.AppendLine($"    protected override void {MethodName_ProcessActivateAbilityEvent}({nameof(AbilityEvent)} {ParamName_AbilityEvent})");
@@ -81,7 +90,12 @@ public class AbilityBodyGenerator : ICodeGenerator
         }
         codeBuilder.AppendLine("    }");
         codeBuilder.AppendLine("}");
-
+        /*
+        if (!string.IsNullOrEmpty(namespaceName))
+        {
+            codeBuilder.AppendLine("}");
+        }
+        */
         if (!needFile)
         {
             return default;
