@@ -409,7 +409,7 @@ namespace ActorAbilitySystem
                         targetMethod.Invoke(ability, new AbilityEvent[] { abilityEvent });
                     }
 
-                    ability.ProcessCancelAbilityEvent(abilityEvent);
+                    //ability.ProcessCancelAbilityEvent(abilityEvent);
                 }
             }
         }

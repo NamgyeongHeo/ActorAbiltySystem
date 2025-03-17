@@ -170,15 +170,5 @@ namespace ActorAbilitySystem
         {
 
         }
-
-        // Do not override this manually.
-        protected internal virtual void ProcessActivateAbilityEvent(AbilityEvent abilityEvent)
-        {
-        }
-
-        // Do not override this manually.
-        protected internal virtual void ProcessCancelAbilityEvent(AbilityEvent abilityEvent)
-        {
-        }
     }
 }
