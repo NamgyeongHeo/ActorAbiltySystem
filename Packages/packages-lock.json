@@ -1,11 +1,29 @@
 {
   "dependencies": {
-    "com.cysharp.unitask": {
-      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.question.code_generator": {
+      "version": "1.0.3",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.question.static_abstract_interface": "1.0.2"
+      },
+      "url": "https://registry.npmjs.org"
+    },
+    "com.question.gameplay_tags": {
+      "version": "https://github.com/NamgyeongHeo/GameplayTags.git?path=Assets/Plugins/GameplayTags",
       "depth": 0,
       "source": "git",
+      "dependencies": {
+        "com.question.code_generator": "1.0.3"
+      },
+      "hash": "bc1d71057f13e3fcc91a7d364bcfe0aaad9acdab"
+    },
+    "com.question.static_abstract_interface": {
+      "version": "1.0.2",
+      "depth": 2,
+      "source": "registry",
       "dependencies": {},
-      "hash": "f9fd769be7c634610f2a61aa914a1a55f34740e1"
+      "url": "https://registry.npmjs.org"
     },
     "com.unity.ai.navigation": {
       "version": "2.0.6",

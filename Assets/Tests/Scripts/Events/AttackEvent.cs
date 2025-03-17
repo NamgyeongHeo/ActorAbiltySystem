@@ -1,4 +1,4 @@
-using UnityEngine;
+using ActorAbilitySystem;
 
 public class AttackEvent : AbilityEvent
 {

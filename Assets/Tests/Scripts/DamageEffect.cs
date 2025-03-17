@@ -1,3 +1,5 @@
+using ActorAbilitySystem;
+
 [TargetActorAttribute(GameplayTagsListConst.Character_Stat_Health)]
 public class DamageEffect : ActorEffect
 {
@@ -10,6 +12,6 @@ public class DamageEffect : ActorEffect
 
     protected override float Modify(float baseValue, float currentValue)
     {
-        return currentValue + magnitude;
+        return currentValue - magnitude;
     }
 }

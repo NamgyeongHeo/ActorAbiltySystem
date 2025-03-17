@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.question.gameplay_tags": "https://github.com/NamgyeongHeo/GameplayTags.git?path=Assets/Plugins/GameplayTags",
     "com.unity.ai.navigation": "2.0.6",
     "com.unity.collab-proxy": "2.7.1",
     "com.unity.ide.rider": "3.0.31",
@@ -44,5 +44,15 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "QuestionPackages",
+      "url": "https://registry.npmjs.org/",
+      "scopes": [
+        "com.question"
+      ],
+      "overrideBuiltIns": false
+    }
+  ]
 }

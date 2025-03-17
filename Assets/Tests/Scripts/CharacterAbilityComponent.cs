@@ -1,3 +1,5 @@
+using ActorAbilitySystem;
+
 public class CharacterAbilityComponent : AbilityComponent
 {
     [ActorAttribute.Initialize(GameplayTagsListConst.Character_Stat_Health, 100)]

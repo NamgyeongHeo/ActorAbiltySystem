@@ -4,9 +4,10 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Ability",
         "GameplayTags",
-        "CodeGenerator"
+        "CodeGenerator",
+        "ActorAbilitySystem",
+        "GameplayTagsListConst"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

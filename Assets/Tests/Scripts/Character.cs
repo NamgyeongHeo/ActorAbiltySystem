@@ -1,3 +1,5 @@
+using ActorAbilitySystem;
+
 public class Character : IAbilityOwnable
 {
     private CharacterAbilityComponent abilityComponent;
@@ -7,6 +9,19 @@ public class Character : IAbilityOwnable
         {
             return abilityComponent.HealthAttribute;
         }
+    }
+
+    public ActorAttribute SpeedAttribute
+    {
+        get
+        {
+            return abilityComponent.SpeedAttribute;
+        }
+    }
+
+    public Character()
+    {
+        abilityComponent = new CharacterAbilityComponent(this);
     }
 
     public AbilityComponent GetAbilityComponent()

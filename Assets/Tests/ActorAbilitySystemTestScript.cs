@@ -1,7 +1,5 @@
-using System.Collections;
+using ActorAbilitySystem;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 
 public class ActorAbilitySystemTestScript
 {
@@ -27,13 +25,25 @@ public class ActorAbilitySystemTestScript
         Assert.IsTrue((enemyHealthBeforeAttack - 30) == enemyHealthAfterAttack);
     }
 
-    // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
-    // `yield return null;` to skip a frame.
-    [UnityTest]
-    public IEnumerator NewTestScriptWithEnumeratorPasses()
+    [Test]
+    public void TemporaryEffectPasses()
     {
-        // Use the Assert class to test conditions.
-        // Use yield to skip a frame.
-        yield return null;
+        Character playerCharacter = new Character();
+        AbilityComponent abilityComponent = playerCharacter.GetAbilityComponent();
+        float oldSpeedValue = playerCharacter.SpeedAttribute.CurrentValue;
+
+        const int BuffCount = 5;
+        const float Magnitude = 10;
+        EffectHandle handle = default;
+        for (int i = 0; i < BuffCount; i++)
+        {
+            handle = abilityComponent.ApplyEffect(new SpeedBuffEffect(Magnitude), abilityComponent);
+        }
+
+        Assert.IsTrue((oldSpeedValue + (BuffCount * Magnitude)) == playerCharacter.SpeedAttribute.CurrentValue);
+
+        abilityComponent.RemoveEffect(handle);
+
+        Assert.IsTrue(oldSpeedValue == playerCharacter.SpeedAttribute.CurrentValue);
     }
 }
