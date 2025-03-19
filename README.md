@@ -1,7 +1,7 @@
 # ActorAbilitySystem
 ## Table of Contents
-[Intro](#Intro)
-[Install](#Install)
+- [Intro](#Intro) 
+- [Install](#Install)
 
 ## Intro 
 This unity package provides AbilitySystem for managing actor's ability and states.
