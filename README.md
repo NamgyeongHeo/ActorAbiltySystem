@@ -28,4 +28,4 @@ You need to add ScopedRegistry to `manifest.json`
 ]
 ```
 
-Then you can add `https://github.com/NamgyeongHeo/ActorAbiltySystem.git?path=Assets/Plugins/ActorAbilitySystem` to UPM by git url.
+Then you can add `https://github.com/NamgyeongHeo/ActorAbiltySystem.git?path=Assets/Plugins/ActorAbilitySystem` to UPM via git url.
