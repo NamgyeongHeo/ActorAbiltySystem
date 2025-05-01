@@ -96,12 +96,22 @@ namespace ActorAbilitySystem
         internal void ProcessStack(TemporaryActorEffect newEffect)
         {
             OnStack(newEffect, ref stack);
+            if (stack <= 0)
+            {
+                Remove();
+            }
+
             SetDirty();
         }
 
-        private void Expire()
+        internal void Expire()
         {
             OnExpired(ref stack);
+            if (stack <= 0)
+            {
+                Remove();
+            }
+
             SetDirty();
         }
 

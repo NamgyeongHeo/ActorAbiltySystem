@@ -193,7 +193,6 @@ namespace ActorAbilitySystem
                     GameplayTag tag = initInfo.attributeIdentifier;
                     if (attributes.ContainsKey(tag))
                     {
-                        continue;
                     }
 
                     ActorAttribute attribute = ActorAttribute.Create(tag, initInfo.initialValue);
@@ -594,6 +593,15 @@ namespace ActorAbilitySystem
             }
         }
 
+        public void ExpireEffect(EffectHandle handle)
+        {
+            if (!effects.TryGetValue(handle, out TemporaryActorEffect effect))
+            {
+                return;
+            }
+
+            effect.Expire();
+        }
         public bool HasEffect<T>() where T : ActorEffect
         {
             return HasEffect(typeof(T));
