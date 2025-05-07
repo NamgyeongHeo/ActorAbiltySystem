@@ -81,6 +81,12 @@ namespace ActorAbilitySystem
     {
         public GameplayTag attributeIdentifier;
         public float initialValue;
+
+        public AttributeInitializationInfo(GameplayTag attributeIdentifier, float initialValue)
+        {
+            this.attributeIdentifier = attributeIdentifier;
+            this.initialValue = initialValue;
+        }
     }
 
     public class AbilityComponent
@@ -602,6 +608,7 @@ namespace ActorAbilitySystem
 
             effect.Expire();
         }
+
         public bool HasEffect<T>() where T : ActorEffect
         {
             return HasEffect(typeof(T));

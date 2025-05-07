@@ -10,30 +10,6 @@ namespace ActorAbilitySystem
     public abstract partial class ActorEffect : IDisposable
     {
         internal event Action onUpdate;
-        public event Action<int> onStackCountChange;
-
-        public enum ELifeTimePolicy
-        {
-            Permanant, // Affect to base value, and effect instance is destroy.
-            Temporary, // Affect to current value, and effect instance has life time by duration.
-                       //Infinite, // Affect to current value, and effect instance is remain infinitely until remove instance manually.
-        }
-
-        public enum EStackDurationPolicy
-        {
-            None, // Don't change exist effect's duration.
-            Refresh, // Reset effect's duration.
-            Append, // Add new effect's duration to exist effect's duration.
-            Individual // Duration timer works individually.
-        }
-
-        public enum EStackExpirationPolicy
-        {
-            Clear, // Clear all stack on expiration.
-            Refresh // Recalculate stack and refresh duration.
-        }
-
-
 
         private AbilityComponent instigator;
         public AbilityComponent Instigator
