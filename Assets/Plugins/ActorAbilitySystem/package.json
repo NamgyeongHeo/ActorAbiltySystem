@@ -1,10 +1,10 @@
 {
   "name": "com.question.actor_ability_system",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "displayName": "ActorAbilitySystem",
   "unity": "6000.0",
   "description": "Ability system for managing actor's ability and state.",
-  "dependencies": { "com.question.gameplay_tags": "1.0.3" },
+  "dependencies": { "com.question.gameplay_tags": "1.0.5" },
   "author": "Namgyeong Heo",
   "keywords": [ "Ability", "AbilitySystem", "ActorAbilitySystem" ],
   "license": "MIT"

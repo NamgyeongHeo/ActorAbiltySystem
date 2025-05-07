@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.question.code_generator": {
-      "version": "1.0.3",
+      "version": "1.0.4",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -14,9 +14,9 @@
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.question.code_generator": "1.0.3"
+        "com.question.code_generator": "1.0.4"
       },
-      "hash": "983ee59f6815152f087721e2f53dc6f976f912ba"
+      "hash": "118037de5e84001a938c2bd3582b20f56f8376de"
     },
     "com.question.static_abstract_interface": {
       "version": "1.0.2",
